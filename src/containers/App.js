@@ -1,53 +1,48 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import CardList from "../components/CardList";
 import SearchBox from "../components/SearchBox";
 import Scroll from "../components/Scroll";
 import ErrorBoundary from "../components/ErrorBoundary";
 import "./App.css";
 
-class App extends React.Component {
-  constructor() {
-    super();
-    this.state = {
-      robots: [],
-      searchfield: "",
-    };
-  }
+import { connect, useSelector, useDispatch } from "react-redux";
+import { setSearchField, requestRobots } from "../actions";
 
-  componentDidMount() {
-    fetch("https://jsonplaceholder.typicode.com/users")
-      .then((response) => response.json())
-      .then((users) => this.setState(() => ({ robots: users })));
-  }
+const App = () => {
+  // const [robots, setRobots] = useState([]);
+  // const [searchfield, setSearchfield] = useState("");
 
-  onSearchChange = (event) => {
+  const dispatch = useDispatch();
+  const searchfield = useSelector((state) => state.searchReducer.searchField);
+  const robots = useSelector((state) => state.requestRobotsReducer.robots);
+  const isPending = useSelector((state) => state.isPending);
+
+  useEffect(() => {
+    dispatch(requestRobots());
+  }, []);
+
+  const onSearchChange = (event) => {
     const searchField = event.target.value;
-    this.setState(() => ({ searchfield: searchField }));
+    dispatch(setSearchField(searchField));
   };
 
-  render() {
-    const { robots, searchfield } = this.state;
-    const filteredRobots = robots.filter((robot) => {
-      return robot.name.toLowerCase().includes(searchfield.toLowerCase());
-    });
+  const filteredRobots = robots.filter((robot) => {
+    return robot.name.toLowerCase().includes(searchfield.toLowerCase());
+  });
 
-    return !robots.length ? (
-      <h1>Loading</h1>
-    ) : (
-      <div className="tc">
-        <h1 className="f1">RoboFriends</h1>
-        <SearchBox
-          searchfield={this.state.searchfield}
-          searchChange={this.onSearchChange}
-        />
-        <Scroll>
-          <ErrorBoundary>
-            <CardList robots={filteredRobots} />
-          </ErrorBoundary>
-        </Scroll>
-      </div>
-    );
-  }
-}
+  return isPending ? (
+    <h1>Loading</h1>
+  ) : (
+    <div className="tc">
+      <h1 className="f1">RoboFriends</h1>
+      <SearchBox searchfield={searchfield} searchChange={onSearchChange} />
+      <Scroll>
+        <ErrorBoundary>
+          <CardList robots={filteredRobots} />
+        </ErrorBoundary>
+      </Scroll>
+    </div>
+  );
+};
 
-export default App;
+export default connect()(App);
